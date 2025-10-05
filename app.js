@@ -508,21 +508,8 @@ class JalchakshApp {
     }
 
     animateStats() {
-        const statsObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    this.animateValue('accuracyStat', 0, 94.2, 2000, '%');
-                    this.animateValue('timeStat', 0, 2.3, 2000, 's');
-                    this.animateValue('imagesStat', 0, 247, 2000, '+');
-                    statsObserver.unobserve(entry.target);
-                }
-            });
-        });
-        
-        const homeSection = document.getElementById('home');
-        if (homeSection) {
-            statsObserver.observe(homeSection);
-        }
+        // Statistics animation removed as per request
+        console.log('Statistics section removed');
     }
 
     animateValue(id, start, end, duration, suffix = '') {
