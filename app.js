@@ -32,7 +32,21 @@ class JalchakshApp {
         // Setup animations
         this.setupAnimations();
 
+        // Check ML component availability
+        this.checkMLComponents();
+        
         console.log('✅ Jalchaksh App initialized');
+    }
+
+    checkMLComponents() {
+        console.log('🔍 Checking ML components availability:');
+        console.log('- ThreatDetector:', window.threatDetector ? '✅ Available' : '❌ Not found');
+        console.log('- ImageEnhancer:', window.imageEnhancer ? '✅ Available' : '❌ Not found');
+        console.log('- MLIntegration:', window.mlIntegration ? '✅ Available' : '❌ Not found');
+        
+        if (window.threatDetector) {
+            console.log('- ThreatDetector initialized:', window.threatDetector.initialized ? '✅ Yes' : '⏳ Initializing...');
+        }
     }
 
     getElements() {
@@ -145,7 +159,14 @@ class JalchakshApp {
     }
 
     initializeML() {
-        // Wait for ML integration
+        // Check for advanced threat detector
+        if (window.threatDetector) {
+            console.log('🎯 Advanced ThreatDetector found');
+            this.mlReady = true;
+            this.showNotification('Advanced threat detection ready!', 'success');
+        }
+        
+        // Check for ML integration
         if (window.mlIntegration) {
             this.checkMLReady();
         } else {
@@ -312,6 +333,42 @@ class JalchakshApp {
     }
 
     async generateSampleThreats(imageData) {
+        // Use the advanced ThreatDetector if available
+        if (window.threatDetector && window.threatDetector.initialized) {
+            try {
+                console.log('🎯 Using advanced ThreatDetector...');
+                const detectionResult = await window.threatDetector.detectThreats(imageData);
+                
+                // Convert the advanced detection results to our format
+                return detectionResult.threats.map(threat => ({
+                    type: threat.type,
+                    priority: threat.priority,
+                    confidence: threat.confidence,
+                    bbox: threat.bbox,
+                    color: threat.color || this.getPriorityColor(threat.priority),
+                    icon: threat.icon || this.getThreatIcon(threat.type),
+                    characteristics: threat.characteristics || [],
+                    metrics: {
+                        ...threat.metrics,
+                        detectionQuality: threat.features?.featureQuality || 'Medium',
+                        estimatedDistance: threat.features?.depth?.estimatedDistance || 'Unknown',
+                        threatLevel: this.calculateSimpleThreatLevel(threat.type, threat.confidence)
+                    },
+                    detectionMethod: threat.detectionMethod || this.getDetectionMethod(threat.type),
+                    timestamp: threat.timestamp || Date.now(),
+                    id: threat.id || `threat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                    features: threat.features // Include detailed features for analysis
+                }));
+            } catch (error) {
+                console.error('Advanced threat detection failed, falling back to basic:', error);
+            }
+        }
+
+        // Fallback to enhanced basic detection
+        return this.generateEnhancedBasicThreats(imageData);
+    }
+
+    async generateEnhancedBasicThreats(imageData) {
         // More sophisticated threat detection simulation
         const threats = [];
 
@@ -387,7 +444,6 @@ class JalchakshApp {
         numThreats = Math.min(3, Math.max(0, numThreats));
 
         // Generate threats based on analysis
-        const availableThreats = Object.keys(threatDatabase);
         const selectedThreats = [];
 
         for (let i = 0; i < numThreats; i++) {
@@ -682,6 +738,27 @@ class JalchakshApp {
         };
 
         return methods[threatType] || 'Visual pattern recognition';
+    }
+
+    calculateSimpleThreatLevel(threatType, confidence) {
+        let level = Math.floor(confidence * 5); // Base level from confidence
+        
+        // Adjust based on threat type
+        switch (threatType) {
+            case 'submarine':
+            case 'torpedo':
+                level += 3;
+                break;
+            case 'mine':
+            case 'drone':
+                level += 2;
+                break;
+            case 'diver':
+                level += 1;
+                break;
+        }
+        
+        return Math.min(10, Math.max(1, level));
     }
 
     generateSampleMetrics() {
@@ -1005,8 +1082,8 @@ class JalchakshApp {
     showNotification(message, type = 'info') {
         const notification = document.createElement('div');
         notification.className = `fixed top-24 right-6 z-50 px-6 py-4 rounded-lg shadow-2xl fade-in ${type === 'success' ? 'bg-green-500/90' :
-                type === 'error' ? 'bg-red-500/90' :
-                    'bg-blue-500/90'
+            type === 'error' ? 'bg-red-500/90' :
+                'bg-blue-500/90'
             }`;
 
         notification.innerHTML = `
